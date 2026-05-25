@@ -133,6 +133,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  String _getValidImageUrl(String? url) {
+    if (url != null && url.isNotEmpty) {
+      return url;
+    }
+    return 'https://picsum.photos/400?random=${DateTime.now().millisecondsSinceEpoch}';
+  }
+
   Widget _buildTourList(TourHomeViewModel viewModel) {
     final tours = viewModel.featuredTours;
 
@@ -157,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemBuilder: (context, index) {
           final tour = tours[index];
           return TourCardCompact(
-            imageUrl: tour.thumbnailUrl ?? 'https://picsum.photos/400?random=0',
+            imageUrl: _getValidImageUrl(tour.thumbnailUrl),
             rating: '★ ${tour.averageRating?.toStringAsFixed(1) ?? 'N/A'}',
             duration:
                 '${tour.durationDays ?? 0}N${(tour.durationDays ?? 1) - 1}Đ',

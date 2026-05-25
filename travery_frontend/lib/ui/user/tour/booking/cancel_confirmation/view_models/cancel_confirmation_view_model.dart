@@ -39,12 +39,9 @@ class CancelConfirmationViewModel extends ChangeNotifier {
 
   String get formattedEstimatedRefund {
     if (_bookingData == null) return '0 đ';
-    // Estimate refund based on status (before actual cancellation)
-    // For PENDING bookings: full refund (no payment made yet)
-    // For PAID bookings: refund minus processing fee (estimate ~95%)
-    double refundPercent = 0.95; // default estimate
+    double refundPercent = 0.95;
     if (_bookingData!.status.toUpperCase() == 'PENDING') {
-      refundPercent = 1.0; // Full refund if pending
+      refundPercent = 1.0;
     }
     final estimatedRefund = _bookingData!.totalPrice * refundPercent;
     final formatter = NumberFormat.currency(

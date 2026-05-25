@@ -15,12 +15,22 @@ class TourListScreen extends StatefulWidget {
 }
 
 class _TourListScreenState extends State<TourListScreen> {
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TourListViewModel>().loadTours();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -47,14 +57,60 @@ class _TourListScreenState extends State<TourListScreen> {
         builder: (context, vm, child) {
           return Column(
             children: [
+              _buildSearchBar(vm),
               FilterSortBar(
-                hasActiveFilters: vm.selectedDate != null,
+                hasActiveFilters: vm.hasActiveFilters,
                 onFilterPressed: () => _showFilterBottomSheet(context, vm),
+                onSortPressed: vm.toggleSort,
+                isSortAscending: vm.sortType == TourSortType.priceAsc,
               ),
               Expanded(child: _buildBody(vm)),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(TourListViewModel vm) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: AppColors.surface,
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        decoration: InputDecoration(
+          hintText: 'Tìm kiếm tour...',
+          hintStyle: const TextStyle(color: AppColors.textHint),
+          prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: AppColors.textHint),
+                  onPressed: () {
+                    _searchController.clear();
+                    vm.search('');
+                    setState(() {});
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.inputBackground,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        onChanged: (value) {
+          setState(() {});
+        },
+        onSubmitted: (value) {
+          vm.search(value);
+        },
+        textInputAction: TextInputAction.search,
       ),
     );
   }
@@ -113,8 +169,7 @@ class _TourListScreenState extends State<TourListScreen> {
         itemBuilder: (context, index) {
           final tour = vm.tours[index];
           return _TourListCard(
-            imageUrl:
-                tour.thumbnailUrl ?? 'https://picsum.photos/400?random=$index',
+            imageUrl: _getValidImageUrl(tour.thumbnailUrl, index),
             rating: '★ ${tour.averageRating?.toStringAsFixed(1) ?? 'N/A'}',
             duration:
                 '${tour.durationDays ?? 0}N${(tour.durationDays ?? 1) - 1}Đ',
@@ -139,6 +194,13 @@ class _TourListScreenState extends State<TourListScreen> {
       ),
       builder: (ctx) => _FilterBottomSheet(vm: vm),
     );
+  }
+
+  String _getValidImageUrl(String? url, int index) {
+    if (url != null && url.isNotEmpty) {
+      return url;
+    }
+    return 'https://picsum.photos/400?random=$index';
   }
 }
 
@@ -366,23 +428,22 @@ class _FilterBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Sắp xếp theo giá',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 12),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SortChip(
-                label: 'Giá: Tăng dần',
-                isSelected: vm.sortType == TourSortType.priceAsc,
-                onTap: () => vm.setSortType(TourSortType.priceAsc),
+              const Text(
+                'Bộ lọc',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
-              const SizedBox(width: 8),
-              _SortChip(
-                label: 'Giá: Giảm dần',
-                isSelected: vm.sortType == TourSortType.priceDesc,
-                onTap: () => vm.setSortType(TourSortType.priceDesc),
+              TextButton(
+                onPressed: () {
+                  vm.clearFilters();
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  'Xóa lọc',
+                  style: TextStyle(color: AppColors.error),
+                ),
               ),
             ],
           ),
@@ -400,46 +461,12 @@ class _FilterBottomSheet extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Áp dụng',
+                'Đóng',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SortChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SortChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.inputBackground,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
       ),
     );
   }

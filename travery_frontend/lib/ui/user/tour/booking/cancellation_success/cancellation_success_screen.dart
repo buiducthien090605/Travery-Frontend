@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:travery_frontend/data/services/api/model/booking/cancel_booking_response/cancel_booking_response.dart';
+import 'package:travery_frontend/data/services/api/model/booking/create_tour_booking_response/create_tour_booking_response.dart';
+import 'package:travery_frontend/data/services/tour/tour_service.dart';
 import 'package:travery_frontend/routing/routes.dart';
 import 'package:travery_frontend/ui/core/themes/app_colors.dart';
 import 'package:travery_frontend/ui/user/tour/booking/widgets/error_view.dart';
 import 'package:travery_frontend/ui/user/tour/booking/widgets/info_card.dart';
 import 'package:travery_frontend/ui/user/tour/booking/widgets/result_header.dart';
+import 'package:travery_frontend/utils/core_result.dart';
 
 class CancellationSuccessScreen extends StatefulWidget {
   final String bookingId;
@@ -27,14 +31,40 @@ class _CancellationSuccessScreenState extends State<CancellationSuccessScreen> {
   CancelBookingData? _cancelData;
   bool _isLoading = true;
   String? _errorMessage;
+  TourBookingData? _bookingData;
 
   @override
   void initState() {
     super.initState();
     _cancelData = widget.cancelData;
-    if (_cancelData != null) {
-      _isLoading = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _verifyCancellation();
+    });
+  }
+
+  Future<void> _verifyCancellation() async {
+    final tourService = context.read<TourService>();
+
+    final result = await tourService.getBookingDetail(widget.bookingId);
+
+    if (!mounted) return;
+
+    switch (result) {
+      case Ok<TourBookingData>():
+        _bookingData = result.value;
+        final status = result.value.status.toUpperCase();
+        if (status == 'CANCELLED' || status == 'CANCELED') {
+          _cancelData ??= widget.cancelData;
+        } else {
+          _errorMessage = 'Không thể xác nhận hủy tour. Trạng thái: $status';
+        }
+      case Error<TourBookingData>():
+        _errorMessage = 'Không thể xác minh trạng thái hủy tour';
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -61,12 +91,18 @@ class _CancellationSuccessScreenState extends State<CancellationSuccessScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             )
-          : _cancelData == null
-          ? ErrorView(
-              message: _errorMessage ?? 'Không có thông tin hủy tour',
-              onRetry: () => context.go(Routes.home),
-            )
-          : _buildContent(),
+          : (_cancelData == null
+                ? ErrorView(
+                    message: _errorMessage ?? 'Không có thông tin hủy tour',
+                    onRetry: () {
+                      setState(() {
+                        _isLoading = true;
+                        _errorMessage = null;
+                      });
+                      _verifyCancellation();
+                    },
+                  )
+                : _buildContent()),
     );
   }
 

@@ -76,6 +76,56 @@ class PaymentViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Verify payment status by calling API - NEVER trust deep link status
+  Future<void> verifyPaymentStatus(String bookingId) async {
+    _bookingId = bookingId;
+    _setStatus(PaymentStatus.loading);
+    notifyListeners();
+
+    final result = await _tourService.getBookingDetail(bookingId);
+
+    switch (result) {
+      case Ok<TourBookingData>():
+        _bookingData = result.value;
+        _txnRef = result.value.payment?.transactionId;
+        _processBookingStatus(result.value.status);
+      case Error<TourBookingData>():
+        _setError(result.error.toString());
+    }
+  }
+
+  void _processBookingStatus(String status) {
+    final upperStatus = status.toUpperCase();
+
+    // Payment success states
+    if (upperStatus == 'PAID' ||
+        upperStatus == 'CONFIRMED' ||
+        upperStatus == 'CHECKED_IN' ||
+        upperStatus == 'IN_PROGRESS') {
+      _confirmState = PaymentConfirmState.confirmed;
+      _setStatus(PaymentStatus.success);
+      return;
+    }
+
+    // Payment failed/cancelled states
+    if (upperStatus == 'CANCELLED') {
+      _confirmState = PaymentConfirmState.failed;
+      _setStatus(PaymentStatus.failed);
+      return;
+    }
+
+    // Still pending - show waiting state
+    if (upperStatus == 'PENDING') {
+      _confirmState = PaymentConfirmState.confirming;
+      _setStatus(PaymentStatus.pending);
+      return;
+    }
+
+    // Default - treat as pending confirmation
+    _confirmState = PaymentConfirmState.confirming;
+    _setStatus(PaymentStatus.processing);
+  }
+
   Future<void> initFromBookingId(String bookingId) async {
     _bookingId = bookingId;
     _setStatus(PaymentStatus.loading);

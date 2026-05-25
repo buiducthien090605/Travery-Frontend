@@ -179,7 +179,7 @@ class _CancelConfirmationScreenContentState
     if (result != null) {
       context.pushReplacement(
         Routes.cancellationSuccess.replaceFirst(':id', widget.bookingId),
-        extra: {'cancelData': result},
+        extra: result,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

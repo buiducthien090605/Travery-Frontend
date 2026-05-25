@@ -5,11 +5,15 @@ import 'package:travery_frontend/ui/core/themes/app_text_theme.dart';
 class FilterSortBar extends StatelessWidget {
   final bool hasActiveFilters;
   final VoidCallback? onFilterPressed;
+  final VoidCallback? onSortPressed;
+  final bool isSortAscending;
 
   const FilterSortBar({
     super.key,
     this.hasActiveFilters = false,
     this.onFilterPressed,
+    this.onSortPressed,
+    this.isSortAscending = false,
   });
 
   @override
@@ -20,6 +24,36 @@ class FilterSortBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          GestureDetector(
+            onTap: onSortPressed,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isSortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Giá',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: AppTextTheme.bodyMedium,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: onFilterPressed,
             child: Container(
@@ -42,7 +76,7 @@ class FilterSortBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Bộ lọc',
+                    'Lọc',
                     style: TextStyle(
                       color: hasActiveFilters
                           ? Colors.white

@@ -22,6 +22,9 @@ class TourListViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  String _searchKeyword = '';
+  String get searchKeyword => _searchKeyword;
+
   DateTime? _selectedDate;
   DateTime? get selectedDate => _selectedDate;
 
@@ -40,16 +43,23 @@ class TourListViewModel extends ChangeNotifier {
     }
   }
 
+  void setSearchKeyword(String keyword) {
+    _searchKeyword = keyword;
+  }
+
+  void search(String keyword) {
+    _searchKeyword = keyword;
+    loadTours();
+  }
+
   void setDateFilter(DateTime? date) {
     _selectedDate = date;
-    _applyFiltersAndSort();
-    notifyListeners();
+    loadTours();
   }
 
   void setPriceRange(RangeValues range) {
     _priceRange = range;
-    _applyFiltersAndSort();
-    notifyListeners();
+    loadTours();
   }
 
   void toggleSort() {
@@ -66,14 +76,30 @@ class TourListViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearFilters() {
+    _searchKeyword = '';
+    _selectedDate = null;
+    _priceRange = const RangeValues(0, 50000000);
+    _sortType = TourSortType.priceDesc;
+    loadTours();
+  }
+
+  bool get hasActiveFilters {
+    return _searchKeyword.isNotEmpty ||
+        _selectedDate != null ||
+        _priceRange.start > 0 ||
+        _priceRange.end < 50000000;
+  }
+
   Future<void> loadTours() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     final result = await _tourService.searchTours(
-      minPrice: _priceRange.start,
-      maxPrice: _priceRange.end,
+      keyword: _searchKeyword.isNotEmpty ? _searchKeyword : null,
+      minPrice: _priceRange.start > 0 ? _priceRange.start : null,
+      maxPrice: _priceRange.end < 50000000 ? _priceRange.end : null,
       startDate: _selectedDate,
     );
 

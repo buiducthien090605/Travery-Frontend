@@ -44,35 +44,26 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
     final tourService = context.read<TourService>();
     _vm = PaymentViewModel(tourService: tourService);
 
-    // Check if we have bookingData passed directly (from navigation)
+    // Get bookingId from navigation or pending payment
+    String? bookingId;
+
     if (widget.bookingData != null) {
-      await _vm.initPayment(widget.bookingData!);
+      bookingId = widget.bookingData!.id;
     }
 
-    // Also check pendingPayment (for deep link recovery)
     final securityStorage = context.read<SecurityStorageService>();
     final pendingPayment = await securityStorage.getPendingPayment();
 
     if (pendingPayment != null) {
-      final bookingId = pendingPayment['bookingId'] as String?;
-      if (bookingId != null && _vm.bookingId == null) {
-        // Only init from pending if we don't have bookingId yet
-        await _vm.initFromBookingId(bookingId);
+      final pendingBookingId = pendingPayment['bookingId'] as String?;
+      if (pendingBookingId != null && bookingId == null) {
+        bookingId = pendingBookingId;
       }
     }
 
-    // Handle deep link parameters if available
-    if (widget.txnRef != null && widget.status != null) {
-      _vm.onDeepLinkArrived(
-        txnRef: widget.txnRef!,
-        status: widget.status!,
-        responseCode: widget.responseCode,
-      );
-    }
-
-    // Start polling to check payment status
-    if (_vm.bookingId != null) {
-      _vm.startPollingWithBackoff();
+    if (bookingId != null) {
+      // ALWAYS call API to verify payment status - NEVER trust deep link status
+      await _vm.verifyPaymentStatus(bookingId);
     }
 
     _vm.addListener(_onVmUpdate);
