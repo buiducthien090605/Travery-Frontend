@@ -9,12 +9,20 @@ import 'package:travery_frontend/utils/core_result.dart';
 
 /// Service for coordinator staff GET APIs.
 class CoordinatorApiService {
-  CoordinatorApiService({String? host, HttpClient Function()? clientFactory})
-    : _host = host ?? AppConfig.baseUrl,
-      _clientFactory = clientFactory ?? HttpClient.new;
+  CoordinatorApiService({
+    String? host,
+    int? port,
+    HttpClient Function()? clientFactory,
+  }) : _host = host ?? AppConfig.host,
+       _port = port ?? AppConfig.port,
+       _clientFactory = clientFactory ?? HttpClient.new;
 
   final String _host;
+  final int _port;
   final HttpClient Function() _clientFactory;
+
+  Uri _buildUri(String path, [Map<String, String>? queryParams]) =>
+      Uri.parse('$_host:$_port$path').replace(queryParameters: queryParams);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -49,7 +57,7 @@ class CoordinatorApiService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final uri = Uri.https(_host, '/api/v1/staff/coordinator/instances', {
+      final uri = _buildUri('/api/v1/staff/coordinator/instances', {
         'filter': filter,
       });
       final request = await client.getUrl(uri);
@@ -89,7 +97,7 @@ class CoordinatorApiService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final uri = Uri.https(_host, '/api/v1/staff/coordinator/instances/$id');
+      final uri = _buildUri('/api/v1/staff/coordinator/instances/$id');
       final request = await client.getUrl(uri);
       _addAuth(request, accessToken);
       final response = await request.close();
@@ -122,8 +130,7 @@ class CoordinatorApiService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final uri = Uri.https(
-        _host,
+      final uri = _buildUri(
         '/api/v1/staff/coordinator/instances/$id/incidents',
       );
       final request = await client.getUrl(uri);
@@ -165,7 +172,7 @@ class CoordinatorApiService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final uri = Uri.https(_host, '/api/v1/staff/coordinator/instances');
+      final uri = _buildUri('/api/v1/staff/coordinator/instances');
       final request = await client.postUrl(uri);
       _addAuth(request, accessToken);
       request.headers.contentType = ContentType.json;
@@ -212,7 +219,7 @@ class CoordinatorApiService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final uri = Uri.https(_host, '/api/v1/staff/coordinator/instances/$id');
+      final uri = _buildUri('/api/v1/staff/coordinator/instances/$id');
       final request = await client.patchUrl(uri);
       _addAuth(request, accessToken);
       request.headers.contentType = ContentType.json;
@@ -257,10 +264,7 @@ class CoordinatorApiService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final uri = Uri.https(
-        _host,
-        '/api/v1/staff/coordinator/instances/$id/status',
-      );
+      final uri = _buildUri('/api/v1/staff/coordinator/instances/$id/status');
       final request = await client.patchUrl(uri);
       _addAuth(request, accessToken);
       request.headers.contentType = ContentType.json;

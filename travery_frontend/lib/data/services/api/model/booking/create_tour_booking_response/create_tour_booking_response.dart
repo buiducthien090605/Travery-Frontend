@@ -29,6 +29,11 @@ class TourBookingData with _$TourBookingData {
     @Default('') String endDate,
     @Default([]) List<BookingMemberData> members,
     PaymentData? payment,
+    // Additional fields from GET /api/v1/bookings/{id}
+    @Default('') String paymentMethod,
+    @Default('') String paymentStatus,
+    String? transactionId,
+    @Default('') String createdAt,
   }) = _TourBookingData;
 
   factory TourBookingData.fromJson(Map<String, dynamic> json) =>

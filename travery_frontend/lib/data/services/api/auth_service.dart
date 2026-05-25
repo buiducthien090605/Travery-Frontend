@@ -16,12 +16,16 @@ import 'package:travery_frontend/data/services/api/model/authentication/verify_o
 import 'package:travery_frontend/utils/core_result.dart';
 
 class AuthService {
-  AuthService({String? host, HttpClient Function()? clientFactory})
-    : _host = host ?? AppConfig.baseUrl,
+  AuthService({String? host, int? port, HttpClient Function()? clientFactory})
+    : _host = host ?? AppConfig.host,
+      _port = port ?? AppConfig.port,
       _clientFactory = clientFactory ?? HttpClient.new;
 
   final String _host;
+  final int _port;
   final HttpClient Function() _clientFactory;
+
+  Uri _buildUri(String path) => Uri.parse('$_host:$_port$path');
 
   Future<String> _extractErrorMessage(
     HttpClientResponse response,
@@ -41,9 +45,7 @@ class AuthService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/login'),
-      );
+      final request = await client.postUrl(_buildUri('/api/v1/auth/login'));
       // set header Content-Type: application/json
       // Báo cho sever biết file sắp gửi là json
       request.headers.set(
@@ -74,9 +76,7 @@ class AuthService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/signup'),
-      );
+      final request = await client.postUrl(_buildUri('/api/v1/auth/signup'));
       request.headers.set(
         HttpHeaders.contentTypeHeader,
         ContentType.json.value,
@@ -105,7 +105,7 @@ class AuthService {
 
     try {
       final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/forgot-password'),
+        _buildUri('/api/v1/auth/forgot-password'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -136,7 +136,7 @@ class AuthService {
 
     try {
       final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/verify-otp'),
+        _buildUri('/api/v1/auth/verify-otp'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -167,7 +167,7 @@ class AuthService {
 
     try {
       final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/resend-otp'),
+        _buildUri('/api/v1/auth/resend-otp'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -200,7 +200,7 @@ class AuthService {
 
     try {
       final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/reset-password'),
+        _buildUri('/api/v1/auth/reset-password'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -230,9 +230,7 @@ class AuthService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/logout'),
-      );
+      final request = await client.postUrl(_buildUri('/api/v1/auth/logout'));
       request.headers.set(
         HttpHeaders.contentTypeHeader,
         ContentType.json.value,
@@ -258,9 +256,7 @@ class AuthService {
     client.connectionTimeout = const Duration(milliseconds: AppConfig.timeout);
 
     try {
-      final request = await client.postUrl(
-        Uri.https(_host, '/api/v1/auth/refresh'),
-      );
+      final request = await client.postUrl(_buildUri('/api/v1/auth/refresh'));
       request.headers.set(
         HttpHeaders.contentTypeHeader,
         ContentType.json.value,

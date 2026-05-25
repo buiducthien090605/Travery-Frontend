@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:travery_frontend/data/services/api/model/booking/create_tour_booking_response/create_tour_booking_response.dart';
+import 'package:travery_frontend/data/services/security_storage_service.dart';
 import 'package:travery_frontend/data/services/tour/tour_service.dart';
 import 'package:travery_frontend/routing/routes.dart';
 import 'package:travery_frontend/ui/core/themes/app_colors.dart';
@@ -43,19 +44,34 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
     final tourService = context.read<TourService>();
     _vm = PaymentViewModel(tourService: tourService);
 
-    // If bookingData was passed, use it
+    // Check if we have bookingData passed directly (from navigation)
     if (widget.bookingData != null) {
       await _vm.initPayment(widget.bookingData!);
     }
 
-    // Set deep link state
+    // Also check pendingPayment (for deep link recovery)
+    final securityStorage = context.read<SecurityStorageService>();
+    final pendingPayment = await securityStorage.getPendingPayment();
+
+    if (pendingPayment != null) {
+      final bookingId = pendingPayment['bookingId'] as String?;
+      if (bookingId != null && _vm.bookingId == null) {
+        // Only init from pending if we don't have bookingId yet
+        await _vm.initFromBookingId(bookingId);
+      }
+    }
+
+    // Handle deep link parameters if available
     if (widget.txnRef != null && widget.status != null) {
       _vm.onDeepLinkArrived(
         txnRef: widget.txnRef!,
         status: widget.status!,
         responseCode: widget.responseCode,
       );
-      // Start exponential backoff polling
+    }
+
+    // Start polling to check payment status
+    if (_vm.bookingId != null) {
       _vm.startPollingWithBackoff();
     }
 
@@ -74,12 +90,18 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
     super.dispose();
   }
 
-  void _navigateHome() {
-    context.go(Routes.home);
+  void _navigateHome() async {
+    final securityStorage = context.read<SecurityStorageService>();
+    await securityStorage.clearPendingPayment();
+    if (mounted) context.go(Routes.home);
   }
 
-  void _navigateToSuccess() {
-    context.pushReplacement(Routes.bookingSuccess);
+  void _navigateToSuccess() async {
+    final securityStorage = context.read<SecurityStorageService>();
+    await securityStorage.clearPendingPayment();
+    if (mounted) {
+      context.pushReplacement(Routes.bookingSuccess);
+    }
   }
 
   @override
@@ -155,7 +177,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'Vui lòng chờ trong giây lát...',
               style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
@@ -202,7 +224,7 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Cảm ơn bạn đã đặt tour cùng Travery',
               style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
@@ -279,7 +301,10 @@ class _PaymentResultScreenState extends State<PaymentResultScreen> {
             const SizedBox(height: 8),
             Text(
               _getErrorMessage(_vm.deeplinkResponseCode ?? widget.responseCode),
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),

@@ -7,8 +7,6 @@ import 'package:travery_frontend/data/repositories/coordinator/coordinator_repos
 import 'package:travery_frontend/data/repositories/coordinator/coordinator_repository_dev.dart';
 import 'package:travery_frontend/data/repositories/authentication/auth_repository.dart';
 import 'package:travery_frontend/data/repositories/authentication/auth_repository_remote.dart';
-import 'package:travery_frontend/data/repositories/tour_repository.dart';
-import 'package:travery_frontend/data/repositories/tour_repository_mock.dart';
 import 'package:travery_frontend/data/repositories/mission_repository.dart';
 import 'package:travery_frontend/data/repositories/mission_repository_mock.dart';
 import 'package:travery_frontend/data/repositories/check_in_repository.dart';
@@ -37,9 +35,6 @@ import 'package:travery_frontend/ui/guide/mission/view_models/mission_detail_vie
 import 'package:travery_frontend/ui/guide/mission/check_in/view_models/check_in_view_model.dart';
 import 'package:travery_frontend/ui/guide/mission/tour_progress/view_models/tour_progress_view_model.dart';
 import 'package:travery_frontend/ui/guide/mission/tour_completed/view_models/our_completed_view_model.dart';
-import 'package:travery_frontend/ui/coordinator/view_models/coordinator_tour_list_view_model.dart';
-import 'package:travery_frontend/ui/coordinator/view_models/coordinator_tour_template_list_view_model.dart';
-import 'package:travery_frontend/ui/coordinator/view_models/coordinator_coach_template_list_view_model.dart';
 
 import '../data/services/tour/tour_service_impl.dart';
 

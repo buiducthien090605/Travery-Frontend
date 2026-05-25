@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:travery_frontend/routing/routes.dart';
 import 'package:travery_frontend/ui/core/themes/app_colors.dart';
-import 'package:travery_frontend/ui/core/widgets/app_bar_widget.dart';
 import 'package:travery_frontend/ui/user/tour/booking/cancel_confirmation/view_models/cancel_confirmation_view_model.dart';
-import 'package:travery_frontend/ui/user/tour/booking/cancel_confirmation/widgets/warning_banner.dart';
-import 'package:travery_frontend/ui/user/tour/booking/cancel_confirmation/widgets/refund_summary_card.dart';
-import 'package:travery_frontend/ui/user/tour/booking/cancel_confirmation/widgets/action_button.dart';
-
-import 'widgets/cancel_reason_input.dart';
+import 'package:travery_frontend/ui/user/tour/booking/widgets/action_button.dart';
+import 'package:travery_frontend/ui/user/tour/booking/widgets/cancel_reason_input.dart';
+import 'package:travery_frontend/ui/user/tour/booking/widgets/refund_summary_card.dart';
+import 'package:travery_frontend/ui/user/tour/booking/widgets/result_header.dart';
+import 'package:travery_frontend/ui/user/tour/booking/widgets/warning_banner.dart';
 
 class CancelConfirmationScreen extends StatelessWidget {
   const CancelConfirmationScreen({
@@ -41,7 +41,7 @@ class _CancelConfirmationScreenContent extends StatefulWidget {
 
 class _CancelConfirmationScreenContentState
     extends State<_CancelConfirmationScreenContent> {
-  final TextEditingController _reasonController = TextEditingController();
+  final _reasonController = TextEditingController();
 
   @override
   void dispose() {
@@ -53,40 +53,49 @@ class _CancelConfirmationScreenContentState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const AppBarWidget(title: 'Xác nhận hủy', showBackButton: true),
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Xác nhận hủy',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ),
       body: Consumer<CancelConfirmationViewModel>(
-        builder: (context, viewModel, child) {
-          if (viewModel.isLoading) {
+        builder: (context, vm, _) {
+          if (vm.isLoading) {
             return const Center(
               child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
 
-          if (viewModel.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    viewModel.errorMessage!,
-                    style: const TextStyle(color: AppColors.textSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final cancelData = viewModel.cancelData;
-          if (cancelData == null) {
-            return const Center(
-              child: Text('Không tìm thấy thông tin đặt chỗ'),
+          if (vm.errorMessage != null) {
+            final error = vm.errorMessage!;
+            if (error == 'BOOKING_ALREADY_CANCELLED') {
+              return _buildErrorState(
+                'Đã hủy trước đó',
+                'Đặt tour này đã được hủy rồi.',
+                ResultIconType.warning,
+              );
+            } else if (error == 'BOOKING_CANNOT_BE_CANCELLED') {
+              return _buildErrorState(
+                'Không thể hủy',
+                'Đặt tour này không thể hủy vì đã được xác nhận hoặc đang thực hiện.',
+                ResultIconType.error,
+              );
+            }
+            return _buildErrorState(
+              'Đã xảy ra lỗi',
+              error,
+              ResultIconType.error,
             );
           }
 
@@ -95,27 +104,27 @@ class _CancelConfirmationScreenContentState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                WarningBanner(
+                const WarningBanner(
                   title: 'Thao tác này không thể hoàn tác',
                   subtitle:
-                      'Vui lòng xem kỹ thông tin hoàn tiền và chính sách trước khi xác nhận. Sau khi hủy, đặt chỗ của bạn sẽ bị xóa khỏi hệ thống.',
+                      'Vui lòng xem kỹ thông tin hoàn tiền và chính sách trước khi xác nhận.',
                 ),
                 const SizedBox(height: 24),
                 RefundSummaryCard(
-                  totalAmount: viewModel.formattedTotalAmount,
-                  refundAmount: viewModel.formattedRefundAmount,
+                  totalAmount: vm.formattedTotalAmount,
+                  refundAmount: vm.formattedEstimatedRefund,
                 ),
                 const SizedBox(height: 32),
                 CancelReasonInput(
                   controller: _reasonController,
-                  onChanged: (value) => viewModel.updateCancelReason(value),
+                  onChanged: (v) => vm.updateCancelReason(v),
                 ),
                 const SizedBox(height: 40),
                 ActionButton(
                   text: 'Xác nhận hủy',
-                  onPressed: () => _handleConfirmCancel(context, viewModel),
+                  onPressed: () => _handleConfirmCancel(context, vm),
                   isDanger: true,
-                  isLoading: viewModel.isSubmitting,
+                  isLoading: vm.isSubmitting,
                 ),
                 const SizedBox(height: 12),
                 ActionButton(
@@ -131,20 +140,51 @@ class _CancelConfirmationScreenContentState
     );
   }
 
+  Widget _buildErrorState(String title, String message, ResultIconType type) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ResultHeader(iconType: type, title: title, subtitle: message),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Quay lại'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleConfirmCancel(
     BuildContext context,
-    CancelConfirmationViewModel viewModel,
+    CancelConfirmationViewModel vm,
   ) async {
-    final success = await viewModel.submitCancellation(widget.bookingId);
-
+    final result = await vm.submitCancellation(widget.bookingId);
     if (!context.mounted) return;
-
-    if (success) {
-      context.pushReplacement('/booking/${widget.bookingId}/cancel/success');
+    if (result != null) {
+      context.pushReplacement(
+        Routes.cancellationSuccess.replaceFirst(':id', widget.bookingId),
+        extra: {'cancelData': result},
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(viewModel.submitErrorMessage ?? 'Đã xảy ra lỗi'),
+          content: Text(vm.submitErrorMessage ?? 'Đã xảy ra lỗi'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),

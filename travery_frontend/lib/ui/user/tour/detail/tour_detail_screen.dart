@@ -229,7 +229,7 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
             padding: const EdgeInsets.only(bottom: 8),
             child: DepartureItem(
               dateRange:
-                  '${FormatUtils.formatDate(instance.startDate)} - ${FormatUtils.formatDate(instance.endDate)}',
+                  '${FormatUtils.formatDateString(instance.startDate)} - ${FormatUtils.formatDateString(instance.endDate)}',
               status: _formatInstanceStatus(instance.status),
               isSelected: isSelected,
               onTap: () => viewModel.selectInstance(idx),

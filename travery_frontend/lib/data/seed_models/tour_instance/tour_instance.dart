@@ -1,31 +1,66 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import '../tour_booking/tour_booking.dart';
+/// Tour Instance model - represents a specific scheduled tour departure
+///
+/// API Response format:
+/// {
+///   "id": "uuid",
+///   "startDate": "2026-05-25",
+///   "endDate": "2026-05-27",
+///   "status": "PLANNING",
+///   "availableSlots": 20
+/// }
+class TourInstance {
+  const TourInstance({
+    this.id,
+    required this.startDate,
+    required this.endDate,
+    this.status = TourInstanceStatus.PLANNING,
+    this.availableSlots = 0,
+  });
 
-part 'tour_instance.freezed.dart';
-part 'tour_instance.g.dart';
+  final String? id;
 
-@freezed
-class TourInstance with _$TourInstance {
-  const factory TourInstance({
-    String? id,
+  /// Date as string in "yyyy-MM-dd" format (e.g. "2026-05-25")
+  final String startDate;
 
-    @JsonKey(name: 'startDate') required DateTime startDate,
+  /// Date as string in "yyyy-MM-dd" format (e.g. "2026-05-27")
+  final String endDate;
 
-    @JsonKey(name: 'endDate') required DateTime endDate,
+  final TourInstanceStatus status;
+  final int availableSlots;
 
-    @JsonKey(name: 'status') required TourInstanceStatus status,
+  factory TourInstance.fromJson(Map<String, dynamic> json) {
+    // Handle startDate - can be DateTime ISO string or plain date string
+    String parseDate(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value.split('T').first;
+      if (value is DateTime) {
+        return '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+      }
+      return '';
+    }
 
-    @JsonKey(name: 'availableSlots') @Default(0) int availableSlots,
+    final startDateStr = parseDate(json['startDate']);
+    final endDateStr = parseDate(json['endDate']);
 
-    /// RELATIONS
-    List<TourBooking>? bookings,
-  }) = _TourInstance;
+    return TourInstance(
+      id: json['id'] as String?,
+      startDate: startDateStr.isEmpty ? '1970-01-01' : startDateStr,
+      endDate: endDateStr.isEmpty ? '1970-01-01' : endDateStr,
+      status: _parseStatus(json['status']),
+      availableSlots: (json['availableSlots'] as num?)?.toInt() ?? 0,
+    );
+  }
 
-  factory TourInstance.fromJson(Map<String, dynamic> json) =>
-      _$TourInstanceFromJson(json);
+  static TourInstanceStatus _parseStatus(dynamic value) {
+    if (value == null) return TourInstanceStatus.PLANNING;
+    final str = value.toString().toUpperCase();
+    return TourInstanceStatus.values.firstWhere(
+      (e) => e.name == str,
+      orElse: () => TourInstanceStatus.PLANNING,
+    );
+  }
 }
 
-@JsonEnum()
 enum TourInstanceStatus {
   PLANNING,
   OPEN,

@@ -4,21 +4,32 @@ import 'package:travery_frontend/ui/core/themes/app_colors.dart';
 class WarningBanner extends StatelessWidget {
   final String title;
   final String subtitle;
+  final IconData? icon;
 
-  const WarningBanner({super.key, required this.title, required this.subtitle});
+  const WarningBanner({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.warning_rounded, color: AppColors.error, size: 28),
+          Icon(
+            icon ?? Icons.warning_amber_rounded,
+            color: AppColors.warning,
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -27,18 +38,17 @@ class WarningBanner extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: AppColors.error,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    color: AppColors.warning,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
                     fontSize: 13,
-                    height: 1.5,
+                    color: AppColors.warning.withValues(alpha: 0.8),
                   ),
                 ),
               ],

@@ -134,7 +134,7 @@ class _BookingReviewScreenState extends State<BookingReviewScreen> {
     String dateRange = 'N/A';
     if (instance != null) {
       dateRange =
-          '${FormatUtils.formatDate(instance.startDate)} - ${FormatUtils.formatDate(instance.endDate)}';
+          '${FormatUtils.formatDateString(instance.startDate)} - ${FormatUtils.formatDateString(instance.endDate)}';
     }
 
     return Container(

@@ -1,50 +1,86 @@
 import 'package:flutter/material.dart';
-import 'package:travery_frontend/data/seed_models/cancel_confirmation/cancel_confirmation_model.dart';
-import 'package:travery_frontend/data/services/cancel/cancel_service.dart';
-import 'package:travery_frontend/utils/format_utils.dart';
-
-import '../../../../../../utils/core_result.dart';
+import 'package:intl/intl.dart';
+import 'package:travery_frontend/data/services/api/model/booking/cancel_booking_response/cancel_booking_response.dart';
+import 'package:travery_frontend/data/services/api/model/booking/create_tour_booking_response/create_tour_booking_response.dart';
+import 'package:travery_frontend/data/services/tour/tour_service.dart';
+import 'package:travery_frontend/utils/core_result.dart';
 
 class CancelConfirmationViewModel extends ChangeNotifier {
-  final CancelService _cancelService;
+  final TourService _tourService;
 
-  CancelConfirmationViewModel({required CancelService cancelService})
-    : _cancelService = cancelService;
+  CancelConfirmationViewModel({required TourService tourService})
+    : _tourService = tourService;
 
-  CancelConfirmationModel? _cancelData;
+  TourBookingData? _bookingData;
+  CancelBookingData? _cancelResult;
   bool _isLoading = false;
   bool _isSubmitting = false;
   String? _errorMessage;
   String? _submitErrorMessage;
   String _cancelReason = '';
 
-  CancelConfirmationModel? get cancelData => _cancelData;
+  TourBookingData? get cancelData => _bookingData;
   bool get isLoading => _isLoading;
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
   String? get submitErrorMessage => _submitErrorMessage;
   String get cancelReason => _cancelReason;
+  CancelBookingData? get cancelResult => _cancelResult;
 
-  String get formattedTotalAmount => _cancelData != null
-      ? FormatUtils.formatCurrency(_cancelData!.totalAmount)
-      : '0 đ';
+  String get formattedTotalAmount {
+    if (_bookingData == null) return '0 đ';
+    final formatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+      decimalDigits: 0,
+    );
+    return formatter.format(_bookingData!.totalPrice);
+  }
 
-  String get formattedRefundAmount => _cancelData != null
-      ? FormatUtils.formatCurrency(_cancelData!.refundAmount)
-      : '0 đ';
+  String get formattedEstimatedRefund {
+    if (_bookingData == null) return '0 đ';
+    // Estimate refund based on status (before actual cancellation)
+    // For PENDING bookings: full refund (no payment made yet)
+    // For PAID bookings: refund minus processing fee (estimate ~95%)
+    double refundPercent = 0.95; // default estimate
+    if (_bookingData!.status.toUpperCase() == 'PENDING') {
+      refundPercent = 1.0; // Full refund if pending
+    }
+    final estimatedRefund = _bookingData!.totalPrice * refundPercent;
+    final formatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+      decimalDigits: 0,
+    );
+    return formatter.format(estimatedRefund);
+  }
+
+  String get formattedRefundAmount {
+    if (_cancelResult == null) return '0 đ';
+    final formatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+      decimalDigits: 0,
+    );
+    return formatter.format(_cancelResult!.refundAmount);
+  }
 
   Future<void> loadCancelData(String bookingId) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    final result = await _cancelService.getCancelConfirmation(bookingId);
+    final result = await _tourService.getBookingDetail(bookingId);
 
     switch (result) {
-      case Ok<CancelConfirmationModel?>():
-        _cancelData = result.value;
-      // ignore: pattern_never_matches_value_type
-      case Error<CancelConfirmationModel?>():
+      case Ok<TourBookingData>():
+        _bookingData = result.value;
+        if (_isAlreadyCancelled(result.value.status)) {
+          _errorMessage = 'BOOKING_ALREADY_CANCELLED';
+        } else if (_isNotCancellable(result.value.status)) {
+          _errorMessage = 'BOOKING_CANNOT_BE_CANCELLED';
+        }
+      case Error<TourBookingData>():
         _errorMessage = 'Không thể tải thông tin. Vui lòng thử lại.';
     }
 
@@ -52,32 +88,43 @@ class CancelConfirmationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isAlreadyCancelled(String status) {
+    final s = status.toUpperCase();
+    return s == 'CANCELLED' || s == 'CANCELED';
+  }
+
+  bool _isNotCancellable(String status) {
+    final s = status.toUpperCase();
+    return s == 'CHECKED_IN' ||
+        s == 'CHECKEDOUT' ||
+        s == 'IN_PROGRESS' ||
+        s == 'COMPLETED';
+  }
+
   void updateCancelReason(String reason) {
     _cancelReason = reason;
     notifyListeners();
   }
 
-  Future<bool> submitCancellation(String bookingId) async {
+  Future<CancelBookingData?> submitCancellation(String bookingId) async {
     _isSubmitting = true;
     _submitErrorMessage = null;
     notifyListeners();
 
-    final result = await _cancelService.submitCancellation(
-      bookingId,
-      _cancelReason.isNotEmpty ? _cancelReason : null,
-    );
+    final result = await _tourService.cancelBooking(bookingId);
 
-    bool success = false;
+    CancelBookingData? cancelData;
     switch (result) {
-      case Ok<bool>():
-        success = true;
-      case Error<bool>():
+      case Ok<CancelBookingData>():
+        _cancelResult = result.value;
+        cancelData = result.value;
+      case Error<CancelBookingData>():
         _submitErrorMessage = 'Không thể hủy tour. Vui lòng thử lại.';
     }
 
     _isSubmitting = false;
     notifyListeners();
 
-    return success;
+    return cancelData;
   }
 }

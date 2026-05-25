@@ -9,8 +9,7 @@ import 'package:travery_frontend/data/repositories/mission_repository.dart';
 import 'package:travery_frontend/data/repositories/check_in_repository.dart';
 import 'package:travery_frontend/data/repositories/tour_progress_repository.dart';
 import 'package:travery_frontend/data/repositories/tour_completed_repository.dart';
-import 'package:travery_frontend/data/services/cancel/cancel_service_mock.dart';
-import 'package:travery_frontend/data/services/cancellation/cancellation_service_mock.dart';
+import 'package:travery_frontend/data/services/api/model/booking/cancel_booking_response/cancel_booking_response.dart';
 import 'package:travery_frontend/data/services/security_storage_service.dart';
 import 'package:travery_frontend/ui/core/auth_guard.dart';
 import 'package:travery_frontend/ui/admin/view/admin_main_screen.dart';
@@ -44,18 +43,23 @@ import '../ui/authentication/widgets/role_selection_screen.dart';
 import '../ui/authentication/view_models/login_view_model.dart';
 import '../ui/authentication/view_models/otp_verification_view_model.dart';
 import '../ui/user/home/tour_home_screen.dart';
+import '../ui/user/home/view_models/tour_home_view_model.dart';
 import '../ui/user/tour/list/tour_list_screen.dart';
+import '../ui/user/tour/list/view_models/tour_list_view_model.dart';
+import '../ui/user/tour/detail/tour_detail_screen.dart';
+import '../ui/user/tour/detail/view_models/tour_detail_view_model.dart';
+import '../ui/user/tour/booking/tour_booking_screen.dart';
+import '../ui/user/tour/booking/view_models/booking_view_model.dart';
 import '../ui/admin/view/create_account_screen.dart';
 import '../ui/admin/view/account_management_screen.dart';
 import '../ui/admin/view/tour_management_screen.dart';
 import '../ui/admin/view/vehicle_management_screen.dart';
 import '../ui/admin/view/dashboard_screen.dart';
 import '../ui/admin/view/hotel_management_screen.dart';
-import '../ui/user/tour/detail/tour_detail_screen.dart';
-import '../ui/user/tour/booking/tour_booking_screen.dart';
 import '../ui/user/tour/booking/review/booking_review_screen.dart';
 import '../ui/user/tour/booking/payment/vnpay_payment_screen.dart';
 import '../ui/user/tour/booking/payment/payment_result_screen.dart';
+import '../ui/user/tour/booking/payment/view_models/payment_view_model.dart';
 import '../ui/user/tour/booking/booking_success_screen.dart';
 import 'package:travery_frontend/data/services/api/model/booking/create_tour_booking_response/create_tour_booking_response.dart';
 import '../ui/user/tour/booking/booking_detail/booking_detail_screen.dart';
@@ -82,6 +86,19 @@ GoRouter appRouter(AuthRepository authRepository) {
   return GoRouter(
     initialLocation: Routes.login,
     debugLogDiagnostics: true,
+    redirect: (context, state) {
+      // Xử lý deep link từ Android/iOS - convert scheme://host/path sang app route
+      final uri = state.uri;
+
+      // Nếu là deep link scheme của app
+      if (uri.scheme == 'travery' && uri.host == 'payment-result') {
+        // Trả về route path với query parameters để GoRouter navigate
+        // GoRouter sẽ match /payment/result route và truyền query params qua state
+        return '/payment/result';
+      }
+
+      return null; // Tiếp tục với route bình thường
+    },
     routes: [
       // --- AUTHENTICATION ROUTES ---
       GoRoute(
@@ -149,27 +166,44 @@ GoRouter appRouter(AuthRepository authRepository) {
 
       GoRoute(
         path: Routes.tourHome,
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (context) => TourHomeViewModel(tourService: context.read()),
+          child: const HomeScreen(),
+        ),
       ),
       GoRoute(
         path: Routes.home,
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (context) => TourHomeViewModel(tourService: context.read()),
+          child: const HomeScreen(),
+        ),
       ),
       GoRoute(
         path: Routes.tourList,
-        builder: (context, state) => const TourListScreen(),
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (context) => TourListViewModel(tourService: context.read()),
+          child: const TourListScreen(),
+        ),
       ),
       GoRoute(
         path: Routes.tourDetail,
         builder: (context, state) {
           final tourId = state.pathParameters['id'];
-          return TourDetailScreen(tourId: tourId);
+          return ChangeNotifierProvider(
+            create: (context) =>
+                TourDetailViewModel(tourService: context.read()),
+            child: TourDetailScreen(tourId: tourId),
+          );
         },
       ),
       GoRoute(
         path: Routes.tourBooking,
-        builder: (context, state) =>
-            AuthGuard(child: const TourBookingScreen()),
+        builder: (context, state) => AuthGuard(
+          child: ChangeNotifierProvider(
+            create: (context) => BookingViewModel(tourService: context.read()),
+            child: const TourBookingScreen(),
+          ),
+        ),
       ),
       GoRoute(
         path: Routes.tourBookingReview,
@@ -178,11 +212,17 @@ GoRouter appRouter(AuthRepository authRepository) {
       GoRoute(
         path: Routes.vnpayPayment,
         builder: (context, state) {
-          final bookingData = state.extra as dynamic;
-          if (bookingData != null) {
-            return VNPayPaymentScreen(bookingData: bookingData);
-          }
-          return const Center(child: Text('Không có thông tin thanh toán'));
+          final bookingData = state.extra as TourBookingData?;
+          return ChangeNotifierProvider(
+            create: (ctx) {
+              final vm = PaymentViewModel(tourService: ctx.read());
+              if (bookingData != null) {
+                vm.initPayment(bookingData);
+              }
+              return vm;
+            },
+            child: VNPayPaymentScreen(bookingData: bookingData),
+          );
         },
       ),
       GoRoute(
@@ -193,10 +233,22 @@ GoRouter appRouter(AuthRepository authRepository) {
           if (extra != null && extra['bookingData'] != null) {
             bookingData = extra['bookingData'] as TourBookingData;
           }
+
+          // Đọc query parameters từ deep link (redirect) hoặc từ extra (manual navigation)
+          final txnRef =
+              state.uri.queryParameters['txnRef'] ??
+              extra?['txnRef'] as String?;
+          final status =
+              state.uri.queryParameters['status'] ??
+              extra?['status'] as String?;
+          final responseCode =
+              state.uri.queryParameters['responseCode'] ??
+              extra?['responseCode'] as String?;
+
           return PaymentResultScreen(
-            txnRef: extra?['txnRef'] as String?,
-            status: extra?['status'] as String?,
-            responseCode: extra?['responseCode'] as String?,
+            txnRef: txnRef,
+            status: status,
+            responseCode: responseCode,
             bookingData: bookingData,
           );
         },
@@ -218,9 +270,7 @@ GoRouter appRouter(AuthRepository authRepository) {
           final bookingId = state.pathParameters['id'] ?? '';
           return CancelConfirmationScreen(
             bookingId: bookingId,
-            viewModel: CancelConfirmationViewModel(
-              cancelService: CancelServiceMock(),
-            ),
+            viewModel: CancelConfirmationViewModel(tourService: context.read()),
           );
         },
       ),
@@ -228,11 +278,14 @@ GoRouter appRouter(AuthRepository authRepository) {
         path: Routes.cancellationSuccess,
         builder: (context, state) {
           final bookingId = state.pathParameters['id'] ?? '';
+          final extra = state.extra as Map<String, dynamic>?;
+          CancelBookingData? cancelData;
+          if (extra != null && extra['cancelData'] != null) {
+            cancelData = extra['cancelData'] as CancelBookingData;
+          }
           return CancellationSuccessScreen(
             bookingId: bookingId,
-            viewModel: CancellationSuccessViewModel(
-              cancellationService: CancellationServiceMock(),
-            ),
+            cancelData: cancelData,
           );
         },
       ),

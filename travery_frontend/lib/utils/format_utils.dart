@@ -16,6 +16,16 @@ class FormatUtils {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
+  static String formatDateString(String dateString) {
+    if (dateString.isEmpty) return '';
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('dd/MM/yyyy').format(date);
+    } catch (_) {
+      return dateString;
+    }
+  }
+
   static String formatDateTime(DateTime dateTime) {
     return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
   }

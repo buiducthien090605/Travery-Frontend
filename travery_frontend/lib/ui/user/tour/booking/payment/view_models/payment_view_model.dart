@@ -76,6 +76,34 @@ class PaymentViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> initFromBookingId(String bookingId) async {
+    _bookingId = bookingId;
+    _setStatus(PaymentStatus.loading);
+    notifyListeners();
+
+    final result = await _tourService.getBookingDetail(bookingId);
+
+    switch (result) {
+      case Ok<TourBookingData>():
+        _bookingData = result.value;
+        _txnRef = result.value.payment?.transactionId;
+        if (result.value.payment != null &&
+            result.value.payment!.paymentUrl.isNotEmpty) {
+          _paymentUrl = result.value.payment!.paymentUrl;
+          if (result.value.payment!.expiresAt != null) {
+            _expiresAt = DateTime.tryParse(result.value.payment!.expiresAt!);
+            _startCountdown();
+          }
+          _setStatus(PaymentStatus.pending);
+        } else {
+          // No payment URL yet, wait for user to create payment
+          _setStatus(PaymentStatus.pending);
+        }
+      case Error<TourBookingData>():
+        _setError(result.error.toString());
+    }
+  }
+
   Future<void> initPayment(TourBookingData bookingData) async {
     _bookingData = bookingData;
     _bookingId = bookingData.id;

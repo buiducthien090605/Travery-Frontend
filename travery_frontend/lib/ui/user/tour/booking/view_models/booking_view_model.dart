@@ -255,6 +255,32 @@ class BookingViewModel extends ChangeNotifier {
     return null;
   }
 
+  /// Validate child age - must be under 10 years old
+  /// Returns error message if invalid, null if valid
+  String? validateChildAge(DateTime? dateOfBirth, int memberIndex) {
+    final member = memberIndex < _members.length ? _members[memberIndex] : null;
+    if (member == null || member.type != MemberType.child) {
+      return null; // Not a child, no age validation needed
+    }
+
+    if (dateOfBirth == null) {
+      return 'Trẻ em phải có ngày sinh và tuổi phải dưới 10';
+    }
+
+    final now = DateTime.now();
+    int age = now.year - dateOfBirth.year;
+    if (now.month < dateOfBirth.month ||
+        (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
+      age--;
+    }
+
+    if (age >= 10) {
+      return 'Trẻ em phải dưới 10 tuổi (hiện tại: $age tuổi)';
+    }
+
+    return null;
+  }
+
   bool validateAll() {
     for (final member in _members) {
       if (member.fullName.isEmpty || member.identityNumber.isEmpty) {
@@ -275,6 +301,12 @@ class BookingViewModel extends ChangeNotifier {
       }
       if (member.identityNumber.isEmpty) {
         errors.add('Thành viên ${i + 1}: Vui lòng nhập CCCD/CMND');
+      }
+
+      // Validate child age for children
+      final childAgeError = validateChildAge(member.dateOfBirth, i);
+      if (childAgeError != null) {
+        errors.add('Thành viên ${i + 1}: $childAgeError');
       }
     }
 

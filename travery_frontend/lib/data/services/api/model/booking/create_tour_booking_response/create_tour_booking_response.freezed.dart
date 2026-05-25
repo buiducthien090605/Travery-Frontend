@@ -214,7 +214,12 @@ mixin _$TourBookingData {
   String get startDate => throw _privateConstructorUsedError;
   String get endDate => throw _privateConstructorUsedError;
   List<BookingMemberData> get members => throw _privateConstructorUsedError;
-  PaymentData? get payment => throw _privateConstructorUsedError;
+  PaymentData? get payment =>
+      throw _privateConstructorUsedError; // Additional fields from GET /api/v1/bookings/{id}
+  String get paymentMethod => throw _privateConstructorUsedError;
+  String get paymentStatus => throw _privateConstructorUsedError;
+  String? get transactionId => throw _privateConstructorUsedError;
+  String get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this TourBookingData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -248,6 +253,10 @@ abstract class $TourBookingDataCopyWith<$Res> {
     String endDate,
     List<BookingMemberData> members,
     PaymentData? payment,
+    String paymentMethod,
+    String paymentStatus,
+    String? transactionId,
+    String createdAt,
   });
 
   $PaymentDataCopyWith<$Res>? get payment;
@@ -282,6 +291,10 @@ class _$TourBookingDataCopyWithImpl<$Res, $Val extends TourBookingData>
     Object? endDate = null,
     Object? members = null,
     Object? payment = freezed,
+    Object? paymentMethod = null,
+    Object? paymentStatus = null,
+    Object? transactionId = freezed,
+    Object? createdAt = null,
   }) {
     return _then(
       _value.copyWith(
@@ -341,6 +354,22 @@ class _$TourBookingDataCopyWithImpl<$Res, $Val extends TourBookingData>
                 ? _value.payment
                 : payment // ignore: cast_nullable_to_non_nullable
                       as PaymentData?,
+            paymentMethod: null == paymentMethod
+                ? _value.paymentMethod
+                : paymentMethod // ignore: cast_nullable_to_non_nullable
+                      as String,
+            paymentStatus: null == paymentStatus
+                ? _value.paymentStatus
+                : paymentStatus // ignore: cast_nullable_to_non_nullable
+                      as String,
+            transactionId: freezed == transactionId
+                ? _value.transactionId
+                : transactionId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            createdAt: null == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as String,
           )
           as $Val,
     );
@@ -385,6 +414,10 @@ abstract class _$$TourBookingDataImplCopyWith<$Res>
     String endDate,
     List<BookingMemberData> members,
     PaymentData? payment,
+    String paymentMethod,
+    String paymentStatus,
+    String? transactionId,
+    String createdAt,
   });
 
   @override
@@ -419,6 +452,10 @@ class __$$TourBookingDataImplCopyWithImpl<$Res>
     Object? endDate = null,
     Object? members = null,
     Object? payment = freezed,
+    Object? paymentMethod = null,
+    Object? paymentStatus = null,
+    Object? transactionId = freezed,
+    Object? createdAt = null,
   }) {
     return _then(
       _$TourBookingDataImpl(
@@ -478,6 +515,22 @@ class __$$TourBookingDataImplCopyWithImpl<$Res>
             ? _value.payment
             : payment // ignore: cast_nullable_to_non_nullable
                   as PaymentData?,
+        paymentMethod: null == paymentMethod
+            ? _value.paymentMethod
+            : paymentMethod // ignore: cast_nullable_to_non_nullable
+                  as String,
+        paymentStatus: null == paymentStatus
+            ? _value.paymentStatus
+            : paymentStatus // ignore: cast_nullable_to_non_nullable
+                  as String,
+        transactionId: freezed == transactionId
+            ? _value.transactionId
+            : transactionId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        createdAt: null == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as String,
       ),
     );
   }
@@ -501,6 +554,10 @@ class _$TourBookingDataImpl implements _TourBookingData {
     this.endDate = '',
     final List<BookingMemberData> members = const [],
     this.payment,
+    this.paymentMethod = '',
+    this.paymentStatus = '',
+    this.transactionId,
+    this.createdAt = '',
   }) : _members = members;
 
   factory _$TourBookingDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -551,10 +608,22 @@ class _$TourBookingDataImpl implements _TourBookingData {
 
   @override
   final PaymentData? payment;
+  // Additional fields from GET /api/v1/bookings/{id}
+  @override
+  @JsonKey()
+  final String paymentMethod;
+  @override
+  @JsonKey()
+  final String paymentStatus;
+  @override
+  final String? transactionId;
+  @override
+  @JsonKey()
+  final String createdAt;
 
   @override
   String toString() {
-    return 'TourBookingData(id: $id, customerName: $customerName, customerPhone: $customerPhone, specialRequests: $specialRequests, status: $status, totalPrice: $totalPrice, pricePerAdultAtBooking: $pricePerAdultAtBooking, pricePerChildAtBooking: $pricePerChildAtBooking, paymentDeadline: $paymentDeadline, tourName: $tourName, startDate: $startDate, endDate: $endDate, members: $members, payment: $payment)';
+    return 'TourBookingData(id: $id, customerName: $customerName, customerPhone: $customerPhone, specialRequests: $specialRequests, status: $status, totalPrice: $totalPrice, pricePerAdultAtBooking: $pricePerAdultAtBooking, pricePerChildAtBooking: $pricePerChildAtBooking, paymentDeadline: $paymentDeadline, tourName: $tourName, startDate: $startDate, endDate: $endDate, members: $members, payment: $payment, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, transactionId: $transactionId, createdAt: $createdAt)';
   }
 
   @override
@@ -584,7 +653,15 @@ class _$TourBookingDataImpl implements _TourBookingData {
                 other.startDate == startDate) &&
             (identical(other.endDate, endDate) || other.endDate == endDate) &&
             const DeepCollectionEquality().equals(other._members, _members) &&
-            (identical(other.payment, payment) || other.payment == payment));
+            (identical(other.payment, payment) || other.payment == payment) &&
+            (identical(other.paymentMethod, paymentMethod) ||
+                other.paymentMethod == paymentMethod) &&
+            (identical(other.paymentStatus, paymentStatus) ||
+                other.paymentStatus == paymentStatus) &&
+            (identical(other.transactionId, transactionId) ||
+                other.transactionId == transactionId) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -605,6 +682,10 @@ class _$TourBookingDataImpl implements _TourBookingData {
     endDate,
     const DeepCollectionEquality().hash(_members),
     payment,
+    paymentMethod,
+    paymentStatus,
+    transactionId,
+    createdAt,
   );
 
   /// Create a copy of TourBookingData
@@ -640,6 +721,10 @@ abstract class _TourBookingData implements TourBookingData {
     final String endDate,
     final List<BookingMemberData> members,
     final PaymentData? payment,
+    final String paymentMethod,
+    final String paymentStatus,
+    final String? transactionId,
+    final String createdAt,
   }) = _$TourBookingDataImpl;
 
   factory _TourBookingData.fromJson(Map<String, dynamic> json) =
@@ -672,7 +757,15 @@ abstract class _TourBookingData implements TourBookingData {
   @override
   List<BookingMemberData> get members;
   @override
-  PaymentData? get payment;
+  PaymentData? get payment; // Additional fields from GET /api/v1/bookings/{id}
+  @override
+  String get paymentMethod;
+  @override
+  String get paymentStatus;
+  @override
+  String? get transactionId;
+  @override
+  String get createdAt;
 
   /// Create a copy of TourBookingData
   /// with the given fields replaced by the non-null parameter values.

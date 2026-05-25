@@ -1,15 +1,12 @@
 class AppConfig {
-  static const int timeout = 10000;
+  // deployed
+  static const String host = 'http://192.168.192.1';
+  static const int port = 8080;
 
-  static const String baseUrl = String.fromEnvironment('BASE_URL');
+  // local host
+  // Use 'http://10.0.2.2' if you are testing on an Android Emulator.
+  // Use 'http://localhost' or 'http://127.0.0.1' if you are on iOS Simulator, Web, or Windows.
+  // static const String host = 'https://uninsured-saturate-satin.ngrok-free.dev';
 
-  static const String cometchatAuthKey = String.fromEnvironment(
-    'COMETCHAT_AUTH_KEY',
-  );
-  static const String cometChatAppId = String.fromEnvironment(
-    'COMETCHAT_APP_ID',
-  );
-  static const String cometChatRegion = String.fromEnvironment(
-    'COMETCHAT_REGION',
-  );
+  static const int timeout = 30000;
 }

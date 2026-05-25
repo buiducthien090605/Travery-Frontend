@@ -66,17 +66,31 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
     return '$day/$month/$year';
   }
 
-  Future<void> _selectBirthDate(BuildContext context, int index) async {
+  Future<void> _selectBirthDate(BuildContext context, int index, bool isChild) async {
     final vm = context.read<BookingViewModel>();
     final DateTime now = DateTime.now();
+
+    // Calculate date range based on member type
+    final DateTime firstDate;
+    final DateTime lastDate;
+
+    if (isChild) {
+      // Child must be under 10 years old
+      firstDate = DateTime(now.year - 10);
+      lastDate = now;
+    } else {
+      firstDate = DateTime(1920);
+      lastDate = now;
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate:
           index < vm.members.length && vm.members[index].dateOfBirth != null
           ? vm.members[index].dateOfBirth!
-          : DateTime(2000, 1, 1),
-      firstDate: DateTime(1920),
-      lastDate: now,
+          : (isChild ? DateTime(now.year - 5, now.month, now.day) : DateTime(2000, 1, 1)),
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -210,7 +224,7 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
     String dateRange = 'N/A';
     if (instance != null) {
       dateRange =
-          '${FormatUtils.formatDate(instance.startDate)} - ${FormatUtils.formatDate(instance.endDate)}';
+          '${FormatUtils.formatDateString(instance.startDate)} - ${FormatUtils.formatDateString(instance.endDate)}';
     }
 
     return Container(
@@ -406,7 +420,7 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Dưới 12 tuổi',
+                        'Dưới 10 tuổi',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -608,7 +622,9 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
                   ),
                   const SizedBox(height: 12),
                   _buildDatePickerField(
-                    label: 'NGÀY SINH (KHÔNG BẮT BUỘC)',
+                    label: isAdult
+                        ? 'NGÀY SINH (KHÔNG BẮT BUỘC)'
+                        : 'NGÀY SINH * (DƯỚI 10 TUỔI)',
                     index: index,
                     vm: vm,
                   ),
@@ -680,10 +696,16 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
     required int index,
     required BookingViewModel vm,
   }) {
-    final dateOfBirth = index < vm.members.length
-        ? vm.members[index].dateOfBirth
-        : null;
+    final member = index < vm.members.length ? vm.members[index] : null;
+    final dateOfBirth = member?.dateOfBirth;
+    final bool isChild = member?.type == MemberType.child;
     final bool hasValue = dateOfBirth != null;
+
+    // Validate child age if this is a child
+    String? ageError;
+    if (isChild && hasValue) {
+      ageError = vm.validateChildAge(dateOfBirth, index);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -700,14 +722,16 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => _selectBirthDate(context, index),
+          onTap: () => _selectBirthDate(context, index, isChild),
           child: Container(
             height: 44,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: AppColors.inputBackground,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.inputBorder),
+              border: Border.all(
+                color: ageError != null ? AppColors.error : AppColors.inputBorder,
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -730,6 +754,19 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
             ),
           ),
         ),
+        if (ageError != null) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              ageError,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.error,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
