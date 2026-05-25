@@ -66,16 +66,18 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
     return '$day/$month/$year';
   }
 
-  Future<void> _selectBirthDate(BuildContext context, int index, bool isChild) async {
+  Future<void> _selectBirthDate(
+    BuildContext context,
+    int index,
+    bool isChild,
+  ) async {
     final vm = context.read<BookingViewModel>();
     final DateTime now = DateTime.now();
 
-    // Calculate date range based on member type
     final DateTime firstDate;
     final DateTime lastDate;
 
     if (isChild) {
-      // Child must be under 10 years old
       firstDate = DateTime(now.year - 10);
       lastDate = now;
     } else {
@@ -88,7 +90,9 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
       initialDate:
           index < vm.members.length && vm.members[index].dateOfBirth != null
           ? vm.members[index].dateOfBirth!
-          : (isChild ? DateTime(now.year - 5, now.month, now.day) : DateTime(2000, 1, 1)),
+          : (isChild
+                ? DateTime(now.year - 5, now.month, now.day)
+                : DateTime(2000, 1, 1)),
       firstDate: firstDate,
       lastDate: lastDate,
       builder: (context, child) {
@@ -128,7 +132,6 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
       return;
     }
 
-    // Navigate to review screen for final confirmation before calling createBooking
     context.push(Routes.tourBookingReview);
   }
 
@@ -701,7 +704,6 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
     final bool isChild = member?.type == MemberType.child;
     final bool hasValue = dateOfBirth != null;
 
-    // Validate child age if this is a child
     String? ageError;
     if (isChild && hasValue) {
       ageError = vm.validateChildAge(dateOfBirth, index);
@@ -730,7 +732,9 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
               color: AppColors.inputBackground,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: ageError != null ? AppColors.error : AppColors.inputBorder,
+                color: ageError != null
+                    ? AppColors.error
+                    : AppColors.inputBorder,
               ),
             ),
             child: Row(
@@ -760,10 +764,7 @@ class _TourBookingScreenState extends State<TourBookingScreen> {
             padding: const EdgeInsets.only(left: 4),
             child: Text(
               ageError,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.error,
-              ),
+              style: const TextStyle(fontSize: 11, color: AppColors.error),
             ),
           ),
         ],

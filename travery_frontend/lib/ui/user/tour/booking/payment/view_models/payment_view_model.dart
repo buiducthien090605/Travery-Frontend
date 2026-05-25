@@ -57,8 +57,8 @@ class PaymentViewModel extends ChangeNotifier {
   Timer? _pollingTimer;
   int _pollAttempt = 0;
 
-  // Exponential backoff delays in seconds: 2, 2, 3, 3, 5, 5, 5, 10, 10, 10
-  static const List<int> _pollDelays = [2, 2, 3, 3, 5, 5, 5, 10, 10, 10];
+  // Fast polling delays in seconds: 1, 1, 2, 2, 3, 3, 5, 5, 5, 5
+  static const List<int> _pollDelays = [1, 1, 2, 2, 3, 3, 5, 5, 5, 5];
   static const int _maxPollAttempts = 10;
 
   void _setStatus(PaymentStatus s) {
@@ -184,7 +184,6 @@ class PaymentViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Start polling with exponential backoff. Call after deep link arrives.
   Future<void> startPollingWithBackoff() async {
     _pollAttempt = 0;
     await _pollOnce();
@@ -204,7 +203,6 @@ class PaymentViewModel extends ChangeNotifier {
       return;
     }
 
-    // Exponential backoff delay
     final delay = _pollDelays[_pollAttempt];
     await Future.delayed(Duration(seconds: delay));
     _pollAttempt++;
@@ -238,8 +236,9 @@ class PaymentViewModel extends ChangeNotifier {
         break;
     }
 
-    // Continue polling
-    _pollOnce();
+    if (!_disposed) {
+      _pollOnce();
+    }
   }
 
   /// Old polling for the VNPayPaymentScreen (polling while user is on payment screen)

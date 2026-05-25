@@ -255,12 +255,10 @@ class BookingViewModel extends ChangeNotifier {
     return null;
   }
 
-  /// Validate child age - must be under 10 years old
-  /// Returns error message if invalid, null if valid
   String? validateChildAge(DateTime? dateOfBirth, int memberIndex) {
     final member = memberIndex < _members.length ? _members[memberIndex] : null;
     if (member == null || member.type != MemberType.child) {
-      return null; // Not a child, no age validation needed
+      return null;
     }
 
     if (dateOfBirth == null) {
@@ -303,7 +301,6 @@ class BookingViewModel extends ChangeNotifier {
         errors.add('Thành viên ${i + 1}: Vui lòng nhập CCCD/CMND');
       }
 
-      // Validate child age for children
       final childAgeError = validateChildAge(member.dateOfBirth, i);
       if (childAgeError != null) {
         errors.add('Thành viên ${i + 1}: $childAgeError');

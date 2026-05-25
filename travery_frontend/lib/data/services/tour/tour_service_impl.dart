@@ -242,7 +242,6 @@ class TourServiceImpl implements TourService {
 
       final response = await requestObj.close();
 
-      // Backend trả về 200 hoặc 201 đều là thành công
       if (response.statusCode == 200 || response.statusCode == 201) {
         final stringData = await response.transform(utf8.decoder).join();
         final jsonMap = jsonDecode(stringData) as Map<String, dynamic>;

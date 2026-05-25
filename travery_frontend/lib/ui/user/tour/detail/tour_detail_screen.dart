@@ -225,15 +225,10 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
         ...instances.map((instance) {
           final idx = instances.indexOf(instance);
           final isSelected = idx == viewModel.selectedInstanceIndex;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: DepartureItem(
-              dateRange:
-                  '${FormatUtils.formatDateString(instance.startDate)} - ${FormatUtils.formatDateString(instance.endDate)}',
-              status: _formatInstanceStatus(instance.status),
-              isSelected: isSelected,
-              onTap: () => viewModel.selectInstance(idx),
-            ),
+          return DepartureItem(
+            instance: instance,
+            isSelected: isSelected,
+            onTap: () => viewModel.selectInstance(idx),
           );
         }),
       ],
