@@ -8,6 +8,7 @@ import 'package:travery_frontend/ui/user/tour/booking/view_models/booking_view_m
 import 'package:travery_frontend/utils/format_utils.dart';
 import 'package:travery_frontend/data/seed_models/tour_instance/tour_instance.dart';
 import 'package:travery_frontend/data/models/tour/tour_detail_page_data.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'widgets/tour_image_carousel.dart';
 import 'widgets/section_title.dart';
 import 'widgets/departure_item.dart';
@@ -133,6 +134,7 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                           const SizedBox(height: 32),
                           _buildDetailedItinerarySection(tour),
                           const SizedBox(height: 32),
+                          _buildRefundPolicySection(tour),
                           _buildDescriptionSection(tour),
                         ],
                       ),
@@ -185,28 +187,13 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                price,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 2),
-              const Text(
-                'đ',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
+          Text(
+            price,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primary,
+            ),
           ),
         ],
       ),
@@ -272,6 +259,8 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
   }
 
   Widget _buildItineraryDay(TourItineraryPageData day) {
+    final hasImages = day.images != null && day.images!.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Container(
@@ -323,6 +312,52 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                 ],
               ),
             ),
+            if (hasImages)
+              SizedBox(
+                height: 180,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.all(12),
+                  itemCount: day.images!.length,
+                  itemBuilder: (context, index) {
+                    final image = day.images![index];
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        right: index < day.images!.length - 1 ? 8 : 0,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl: image.url,
+                          width: 250,
+                          height: 156,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            width: 250,
+                            height: 156,
+                            color: AppColors.inputBackground,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primary,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            width: 250,
+                            height: 156,
+                            color: AppColors.inputBackground,
+                            child: const Icon(
+                              Icons.image_not_supported,
+                              color: AppColors.textHint,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             if (day.description.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -371,12 +406,150 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
     );
   }
 
+  Widget _buildRefundPolicySection(TourDetailPageData tour) {
+    final refundPolicy = tour.refundPolicy;
+    if (refundPolicy == null || refundPolicy.rules.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle(icon: Icons.policy, title: 'Chính sách hoàn tiền'),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.inputBackground,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.policy,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        refundPolicy.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              ...refundPolicy.rules.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final rule = entry.value;
+                final isLast = idx == refundPolicy.rules.length - 1;
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: isLast
+                        ? null
+                        : const Border(
+                            bottom: BorderSide(
+                              color: AppColors.inputBorder,
+                              width: 0.5,
+                            ),
+                          ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${rule.daysBefore}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              rule.daysBefore == 0
+                                  ? 'Trước giờ khởi hành'
+                                  : '${rule.daysBefore} ngày trước',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Hoàn ${rule.refundPercentage.toInt()}%',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: rule.refundPercentage >= 100
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${rule.refundPercentage.toInt()}%',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: rule.refundPercentage >= 100
+                                ? Colors.green
+                                : AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   void _handleBookTour(TourDetailViewModel viewModel) {
-    final bookingViewModel = context.read<BookingViewModel>();
+    // Get BookingViewModel from parent (root) provider, not from router's new instance
+    final rootProvider = Provider.of<BookingViewModel>(context, listen: false);
 
     if (viewModel.tour == null) return;
 
-    bookingViewModel.setTourData(
+    rootProvider.setTourData(
       tour: viewModel.tour!,
       selectedInstance: viewModel.selectedInstance,
     );

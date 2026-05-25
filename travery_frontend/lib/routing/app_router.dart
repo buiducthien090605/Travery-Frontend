@@ -198,12 +198,8 @@ GoRouter appRouter(AuthRepository authRepository) {
       ),
       GoRoute(
         path: Routes.tourBooking,
-        builder: (context, state) => AuthGuard(
-          child: ChangeNotifierProvider(
-            create: (context) => BookingViewModel(tourService: context.read()),
-            child: const TourBookingScreen(),
-          ),
-        ),
+        builder: (context, state) =>
+            const AuthGuard(child: TourBookingScreen()),
       ),
       GoRoute(
         path: Routes.tourBookingReview,

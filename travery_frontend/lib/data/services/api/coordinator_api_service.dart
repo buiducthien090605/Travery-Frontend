@@ -9,20 +9,15 @@ import 'package:travery_frontend/utils/core_result.dart';
 
 /// Service for coordinator staff GET APIs.
 class CoordinatorApiService {
-  CoordinatorApiService({
-    String? host,
-    int? port,
-    HttpClient Function()? clientFactory,
-  }) : _host = host ?? AppConfig.host,
-       _port = port ?? AppConfig.port,
-       _clientFactory = clientFactory ?? HttpClient.new;
+  CoordinatorApiService({String? host, HttpClient Function()? clientFactory})
+    : _host = host ?? AppConfig.host,
+      _clientFactory = clientFactory ?? HttpClient.new;
 
   final String _host;
-  final int _port;
   final HttpClient Function() _clientFactory;
 
   Uri _buildUri(String path, [Map<String, String>? queryParams]) =>
-      Uri.parse('$_host:$_port$path').replace(queryParameters: queryParams);
+      Uri.parse('$_host$path').replace(queryParameters: queryParams);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 

@@ -16,16 +16,14 @@ import 'package:travery_frontend/data/services/api/model/authentication/verify_o
 import 'package:travery_frontend/utils/core_result.dart';
 
 class AuthService {
-  AuthService({String? host, int? port, HttpClient Function()? clientFactory})
+  AuthService({String? host, HttpClient Function()? clientFactory})
     : _host = host ?? AppConfig.host,
-      _port = port ?? AppConfig.port,
       _clientFactory = clientFactory ?? HttpClient.new;
 
   final String _host;
-  final int _port;
   final HttpClient Function() _clientFactory;
 
-  Uri _buildUri(String path) => Uri.parse('$_host:$_port$path');
+  Uri _buildUri(String path) => Uri.parse('$_host$path');
 
   Future<String> _extractErrorMessage(
     HttpClientResponse response,

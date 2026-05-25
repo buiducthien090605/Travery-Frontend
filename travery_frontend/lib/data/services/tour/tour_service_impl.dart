@@ -74,7 +74,7 @@ class TourServiceImpl implements TourService {
 
       final request = await client.getUrl(
         Uri.parse(
-          '${AppConfig.host}:${AppConfig.port}/api/v1/tours',
+          '${AppConfig.host}/api/v1/tours',
         ).replace(queryParameters: queryParams),
       );
       request.headers.set(
@@ -110,7 +110,7 @@ class TourServiceImpl implements TourService {
 
     try {
       final request = await client.getUrl(
-        Uri.parse('${AppConfig.host}:${AppConfig.port}/api/v1/tours/featured'),
+        Uri.parse('${AppConfig.host}/api/v1/tours/featured'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -145,7 +145,7 @@ class TourServiceImpl implements TourService {
 
     try {
       final request = await client.getUrl(
-        Uri.parse('${AppConfig.host}:${AppConfig.port}/api/v1/tours/$tourId'),
+        Uri.parse('${AppConfig.host}/api/v1/tours/$tourId'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -185,9 +185,7 @@ class TourServiceImpl implements TourService {
 
     try {
       final request = await client.getUrl(
-        Uri.parse(
-          '${AppConfig.host}:${AppConfig.port}/api/v1/tours/$tourId/instances',
-        ),
+        Uri.parse('${AppConfig.host}/api/v1/tours/$tourId/instances'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -230,7 +228,7 @@ class TourServiceImpl implements TourService {
     try {
       final requestObj = await client.postUrl(
         Uri.parse(
-          '${AppConfig.host}:${AppConfig.port}/api/v1/tour-instances/$instanceId/bookings',
+          '${AppConfig.host}/api/v1/tour-instances/$instanceId/bookings',
         ),
       );
       requestObj.headers.set(
@@ -268,9 +266,7 @@ class TourServiceImpl implements TourService {
 
     try {
       final request = await client.getUrl(
-        Uri.parse(
-          '${AppConfig.host}:${AppConfig.port}/api/v1/bookings/$bookingId',
-        ),
+        Uri.parse('${AppConfig.host}/api/v1/bookings/$bookingId'),
       );
       request.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -306,9 +302,7 @@ class TourServiceImpl implements TourService {
 
     try {
       final requestObj = await client.postUrl(
-        Uri.parse(
-          '${AppConfig.host}:${AppConfig.port}/api/v1/bookings/$bookingId/payments',
-        ),
+        Uri.parse('${AppConfig.host}/api/v1/bookings/$bookingId/payments'),
       );
       requestObj.headers.set(
         HttpHeaders.contentTypeHeader,
@@ -357,7 +351,7 @@ class TourServiceImpl implements TourService {
 
       final request = await client.getUrl(
         Uri.parse(
-          '${AppConfig.host}:${AppConfig.port}/api/v1/bookings/me',
+          '${AppConfig.host}/api/v1/bookings/me',
         ).replace(queryParameters: queryParams),
       );
       request.headers.set(
@@ -395,9 +389,7 @@ class TourServiceImpl implements TourService {
 
     try {
       final requestObj = await client.postUrl(
-        Uri.parse(
-          '${AppConfig.host}:${AppConfig.port}/api/v1/bookings/$bookingId/cancel',
-        ),
+        Uri.parse('${AppConfig.host}/api/v1/bookings/$bookingId/cancel'),
       );
       requestObj.headers.set(
         HttpHeaders.contentTypeHeader,
